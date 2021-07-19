@@ -5,6 +5,13 @@
     <OutputType>Library</OutputType>
     <StartupObject />
     <IsPackable>true</IsPackable>
+    <Description>Integration of ViteJS in a asp.net core project.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>Vite;AspnetCore;MVC;Razor;Vue</PackageTags>
+    <Copyright>Custouch</Copyright>
+    <Authors>Custouch</Authors>
+    <Company>Custouch</Company>
+    <Product>Custouch.Open.AspnetCore</Product>
   </PropertyGroup>
 
 </Project>
