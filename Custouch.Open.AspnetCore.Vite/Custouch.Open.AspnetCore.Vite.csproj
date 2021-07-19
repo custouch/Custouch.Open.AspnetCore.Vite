@@ -12,6 +12,8 @@
     <Authors>Custouch</Authors>
     <Company>Custouch</Company>
     <Product>Custouch.Open.AspnetCore</Product>
+    <RepositoryUrl>https://github.com/custouch/Custouch.Open.AspnetCore.Vite</RepositoryUrl>
+    <RepositoryType />
   </PropertyGroup>
 
 </Project>
