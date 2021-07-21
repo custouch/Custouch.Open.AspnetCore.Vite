@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Custouch.Open.AspnetCore.Vite" Version="1.0.0" />
+    <ProjectReference Include="..\..\Custouch.Open.AspnetCore.Vite\Custouch.Open.AspnetCore.Vite.csproj" />
   </ItemGroup>
 
 </Project>
