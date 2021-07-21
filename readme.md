@@ -4,7 +4,7 @@
 
 ## 安装 
 
-![Nuget](https://img.shields.io/nuget/v/Custouch.Open.AspnetCore.Vite)
+[![Nuget](https://img.shields.io/nuget/v/Custouch.Open.AspnetCore.Vite)](https://www.nuget.org/packages/Custouch.Open.AspnetCore.Vite/)
 
 使用 Nuget 或者 dotnet cli 安装：
 
