@@ -1,38 +1,26 @@
 {
   "src/main-legacy.ts": {
-    "file": "assets/main-legacy.84d57b59.js",
+    "file": "assets/main-legacy.d34acc57.js",
     "src": "src/main-legacy.ts",
     "isEntry": true,
-    "imports": [
-      "_vendor-legacy.8772491f.js"
-    ],
     "assets": [
       "assets/logo.03d6d6da.png"
     ]
   },
-  "_vendor-legacy.8772491f.js": {
-    "file": "assets/vendor-legacy.8772491f.js"
-  },
   "vite/legacy-polyfills": {
-    "file": "assets/polyfills-legacy.a75b676a.js",
+    "file": "assets/polyfills-legacy.6f7765bd.js",
     "src": "vite/legacy-polyfills",
     "isEntry": true
   },
   "src/main.ts": {
-    "file": "assets/main.2f23584f.js",
+    "file": "assets/main.8c641bb5.js",
     "src": "src/main.ts",
     "isEntry": true,
-    "imports": [
-      "_vendor.18f6778b.js"
-    ],
     "css": [
-      "assets/main.e93bcb5c.css"
+      "assets/main.6966fb71.css"
     ],
     "assets": [
       "assets/logo.03d6d6da.png"
     ]
-  },
-  "_vendor.18f6778b.js": {
-    "file": "assets/vendor.18f6778b.js"
   }
 }
