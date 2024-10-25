@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace Custouch.Open.AspnetCore.Vite.TagHelpers
 {
@@ -24,33 +25,46 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
         private string BaseDir = "";
         private ViteManifest manifest;
 
-        private string Url(string file) => Path.Combine(BaseDir, file).Replace(@"\","/");
+        private string Url(string file) => Path.Combine(BaseDir, file).Replace(@"\", "/");
+
         private static readonly Dictionary<string, string> _moduleScriptAttrs = new Dictionary<string, string>()
         {
-            { "type","module" }
+            { "type", "module" }
         };
+
         private static readonly Dictionary<string, string> _noModuleScriptAttrs = new Dictionary<string, string>()
         {
-            { "nomodule","" }
+            { "nomodule", "" }
         };
+
         public ViteTagHelper(IWebHostEnvironment env)
         {
             this._env = env;
         }
+
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
         {
             output.TagName = null;
             Mainfile ??= "src/main.ts";
-            var path = Path.Combine(_env.WebRootPath, Manifest);
+            if (Manifest.StartsWith("http"))
+            {
+                await InitFromOrigin(Manifest);
+            }
+            else
+            {
+                var path = Path.Combine(_env.WebRootPath, Manifest);
 
-            if (!File.Exists(path)) return;
+                if (!File.Exists(path)) return;
 
-            await Init(path);
+                await Init(path);
+            }
+
 
             if (manifest.TryGetValue(Mainfile, out var entry))
             {
                 WriteAssert(output, entry, WithImport, _moduleScriptAttrs);
             }
+
             if (manifest.TryGetValue("vite/legacy-polyfills", out var polyfill))
             {
                 output.Content.AppendHtml(Script(Url(polyfill.File), nomodule: true));
@@ -61,21 +75,46 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
                     WriteAssert(output, _polyfill, WithImport, _noModuleScriptAttrs);
                 }
             }
+        }
 
+        private async Task InitFromOrigin(string url)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    string jsonContent = await response.Content.ReadAsStringAsync();
+                    BaseDir = Manifest.Substring(0, Manifest.LastIndexOf('/') + 1);
+                    manifest = ParseJsonString(jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"请求失败：{ex.Message}");
+                }
+            }
         }
 
         private async Task Init(string path)
         {
             BaseDir = Path.GetDirectoryName(Manifest);
-
-            manifest = JsonSerializer.Deserialize<ViteManifest>(await File.ReadAllTextAsync(path), new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            manifest = ParseJsonString(await File.ReadAllTextAsync(path));
         }
 
-        void WriteAssert(TagHelperOutput output, ViteManifestItem item, bool withImport = true, Dictionary<string, string> scriptAttrs = null)
+        private ViteManifest ParseJsonString(string text)
+        {
+            return JsonSerializer.Deserialize<ViteManifest>(text,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = false,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+        }
+
+        void WriteAssert(TagHelperOutput output, ViteManifestItem item, bool withImport = true,
+            Dictionary<string, string> scriptAttrs = null)
         {
             var css = item.Css;
             var file = item.File;
@@ -86,33 +125,38 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
                     output.Content.AppendHtml(Link(Url(_css)));
                 }
             }
+
             if (!string.IsNullOrWhiteSpace(file))
             {
                 output.Content.AppendHtml(Script(Url(file), attrs: scriptAttrs));
             }
+
             if (withImport && item.Imports != null && item.Imports.Any())
             {
                 foreach (var _import in item.Imports)
                 {
                     if (manifest.TryGetValue(_import, out var _item))
                     {
-                        WriteAssert(output, _item, withImport,scriptAttrs);
+                        WriteAssert(output, _item, withImport, scriptAttrs);
                     }
                 }
             }
         }
-        IHtmlContent Script(string path, string type = "", bool nomodule = false, Dictionary<string, string> attrs = null)
-        {
 
+        IHtmlContent Script(string path, string type = "", bool nomodule = false,
+            Dictionary<string, string> attrs = null)
+        {
             var tag = new TagBuilder("script");
             if (!string.IsNullOrWhiteSpace(type))
             {
                 tag.Attributes.Add("type", type);
             }
+
             if (nomodule)
             {
                 tag.Attributes.Add("nomodule", "");
             }
+
             if (attrs != null)
             {
                 foreach (var attr in attrs)
@@ -120,17 +164,24 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
                     tag.Attributes[attr.Key] = attr.Value;
                 }
             }
-            tag.Attributes.Add("src", $"/{path}");
+
+            tag.Attributes.Add("src", GetValidSrc(path));
             tag.TagRenderMode = TagRenderMode.Normal;
             return tag;
         }
+
         IHtmlContent Link(string href)
         {
             var tag = new TagBuilder("link");
             tag.Attributes.Add("rel", "stylesheet");
-            tag.Attributes.Add("href", $"/{href}");
+            tag.Attributes.Add("href", GetValidSrc(href));
             tag.TagRenderMode = TagRenderMode.SelfClosing;
             return tag;
+        }
+
+        private string GetValidSrc(string src)
+        {
+            return src.StartsWith("http") ? src : $"/{src}";
         }
     }
 }
