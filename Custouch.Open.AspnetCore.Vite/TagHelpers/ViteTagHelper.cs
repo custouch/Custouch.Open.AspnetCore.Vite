@@ -20,8 +20,11 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
         public string Manifest { get; set; }
         public string Mainfile { get; set; }
         public bool Legacy { get; set; } = false;
+
         public bool WithImport { get; set; } = true;
 
+        // 远程标签是否在客户端进行渲染
+        public string Mode { get; set; } = "server";
         private string BaseDir = "";
         private ViteManifest manifest;
 
@@ -48,6 +51,12 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
             Mainfile ??= "src/main.ts";
             if (Manifest.StartsWith("http"))
             {
+                if (Mode == "client")
+                {
+                    InitFromOriginInClient(Manifest, output);
+                    return;
+                }
+
                 await InitFromOrigin(Manifest);
             }
             else
@@ -77,6 +86,22 @@ namespace Custouch.Open.AspnetCore.Vite.TagHelpers
             }
         }
 
+        /// <summary>
+        /// 在客户端使用js动态加载
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="output"></param>
+        private void InitFromOriginInClient(string url, TagHelperOutput output)
+        {
+            var script =
+                $"<script>function registerScript(url, mainFile) {{\n    fetch(url).then(res => res.json()).then(data => {{\n  const fileName = url.split('/').pop()\n        const baseUrl = url.replace(fileName, '')\n        for (const key in data) {{\n            const item = data[key]\n            if (!item.isEntry) {{\n                continue\n            }}\n            if (item.file.endsWith('.js')) {{\n                if (key !== mainFile) {{\n                    const script = document.createElement('script')\n                    script.src = baseUrl + item.file\n                    script.setAttribute(\"nomodule\", \"\")\n                    document.body.appendChild(script)\n                }} else {{\n                    const script = document.createElement('script')\n                    script.src = baseUrl + item.file\n                    script.type = 'module'\n                    document.head.appendChild(script)\n\n                    item.css.forEach(css => {{\n                        const link = document.createElement('link')\n                        link.rel = 'stylesheet'\n                        link.href = baseUrl + css\n                        document.head.appendChild(link)\n                    }})\n                }}\n            }}\n        }}\n    }})\n}}\nregisterScript(\"{Manifest}\", \"{Mainfile}\")</script>";
+            output.Content.AppendHtml(script);
+        }
+
+        /// <summary>
+        /// 在服务器远程读取文件
+        /// </summary>
+        /// <param name="url"></param>
         private async Task InitFromOrigin(string url)
         {
             using (HttpClient client = new HttpClient())
