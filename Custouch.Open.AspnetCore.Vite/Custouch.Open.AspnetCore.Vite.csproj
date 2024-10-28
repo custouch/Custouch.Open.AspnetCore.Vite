@@ -14,7 +14,7 @@
     <Product>Custouch.Open.AspnetCore</Product>
     <RepositoryUrl>https://github.com/custouch/Custouch.Open.AspnetCore.Vite</RepositoryUrl>
     <RepositoryType />
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
 </Project>
